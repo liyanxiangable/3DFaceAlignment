@@ -2,8 +2,17 @@
 三维面部三角网格模型的特征点定位
 
 
+原材料：面部 obj 格式模型以及对应纹理贴图
+将三维面部模型降维平面并定位特征点，之后映射到三维，以初步提取面部参数。
 
-将三维面部模型降维平面并定位特征点，之后映射到三维，以提取面部信息。
+### 依赖
+``` shell
+python 3.X
+numpy
+opencv-python
+dlib
+facce_recognition (或自定义部特征点定位模型)
+```
 
 ### 使用方法
 
@@ -34,5 +43,5 @@ python FaceAlignment.py -o ./resources/objModel.obj -t ./resources/texture.png
 ![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/TextureCombineTriangle.jpg)
 
 特征点存在于对应三角网格内：
-
+图中红色点即面部特征点定位
 ![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/FaceLandMarked.jpg)
