@@ -29,7 +29,7 @@ python FaceAlignment.py -o ./resources/objModel.obj -t ./resources/texture.png
 
 ![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/Textured.jpg)
 
-贴图特征点定位：
+贴图与三角网格映射：
 
 ![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/TextureCombineTriangle.jpg)
 
