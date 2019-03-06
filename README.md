@@ -29,7 +29,7 @@ python FaceAlignment.py -o ./resources/objModel.obj -t ./resources/texture.png
 
 纹理贴图：
 
-![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/clonedBlur.jpg)
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/clonedBlur.png)
 
 三角网格映射：
 
