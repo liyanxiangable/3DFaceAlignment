@@ -15,16 +15,24 @@ python FaceAlignment.py -o ./resources/objModel.obj -t ./resources/texture.png
 
 三角网格模型：
 
-![](D:\Repositories\3DFaceAlignment\resources\SideFace.jpg)
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/SideFace.jpg)
 
 纹理贴图：
 
-![](D:\Repositories\3DFaceAlignment\resources\clonedBlur.png)
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/clonedBlur.jpg)
 
 三角网格映射：
 
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/Triangular.jpg)
+
 贴图映射：
+
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/Textured.jpg)
 
 贴图特征点定位：
 
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/TextureCombineTriangle.jpg)
+
 特征点存在于对应三角网格内：
+
+![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/FaceLandMarked.jpg)
