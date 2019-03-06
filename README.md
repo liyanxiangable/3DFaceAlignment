@@ -45,4 +45,5 @@ python FaceAlignment.py -o ./resources/objModel.obj -t ./resources/texture.png
 
 特征点存在于对应三角网格内：
 图中红色点即面部特征点定位
+
 ![](https://github.com/liyanxiangable/3DFaceAlignment/blob/master/resources/FaceLandMarked.jpg)
