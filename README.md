@@ -1,6 +1,7 @@
 # 3DFaceAlignment
 三维面部三角网格模型的特征点定位
-
+Feature point location of 3d facial triangular mesh model
+3D Face Alignment
 
 原材料：面部 obj 格式模型以及对应纹理贴图
 
@@ -18,7 +19,7 @@ facce_recognition (或自定义部特征点定位模型)
 ### 使用方法
 
 ``` shell
-python FaceAlignment.py -o ./resources/objModel.obj -t ./resources/texture.png
+python FaceAlignment.py -o ./resources/yourObjModel.obj -t ./resources/yourTextureImage.png
 ```
 
 ### 效果
