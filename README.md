@@ -1,6 +1,9 @@
 # 3DFaceAlignment
+
 三维面部三角网格模型的特征点定位
+
 Feature point location of 3d facial triangular mesh model
+
 3D Face Alignment
 
 原材料：面部 obj 格式模型以及对应纹理贴图
