@@ -12,10 +12,10 @@ def getOriginalData(file):
     faces_indices = []
     texture_coordinates = []
     texture_indices = []
-    oc_file = open(r"C:\Users\liyanxiang\Desktop\Original_Vertices.txt", "w")
-    fi_file = open(r"C:\Users\liyanxiang\Desktop\Face_Indices.txt", "w")
-    tc_file = open(r"C:\Users\liyanxiang\Desktop\Texture_Coordinates.txt", "w")
-    ti_file = open(r"C:\Users\liyanxiang\Desktop\Texture_Indices.txt", "w")
+    oc_file = open("Original_Vertices.txt", "w")
+    fi_file = open("Face_Indices.txt", "w")
+    tc_file = open("Texture_Coordinates.txt", "w")
+    ti_file = open("Texture_Indices.txt", "w")
     for line in file.readlines():
         content = line.split(" ")
         # 顶点数据
@@ -95,11 +95,11 @@ def renderTexture(texture_coordinates, vertices_coordinates, vertices_indices,
     :return:
     '''
     texture = cv2.imread(texture_file, cv2.IMREAD_COLOR)
-    # 获取图像大小
+    # 获取纹理图像大小
     height, width, channels = texture.shape
     print("纹理贴图尺寸: " + str(height) + " , " + str(width) + " , " + str(channels))
     # 遍历各面
-    for i in range(vertices_indices.shape[0]):
+    for i in range(vertices_indices.shape[0] - 1, 0, -1):
         # 获取当前三角面片顶点索引
         index_va = vertices_indices[i][0] - 1
         index_vb = vertices_indices[i][1] - 1
@@ -135,7 +135,55 @@ def renderTexture(texture_coordinates, vertices_coordinates, vertices_indices,
                             gravity_centre[1]], bc], dtype=np.int32), cb.tolist())
         cv2.fillConvexPoly(image, np.array([[vc[0], vc[1]], bc, [gravity_centre[0],
                             gravity_centre[1]], ac], dtype=np.int32), cc.tolist())
-    cv2.imwrite("Textured.jpg", blank_image)
+    cv2.imwrite("Textured.jpg", color_image)
+    return
+
+def renderDepth(vertices_coordinates, vertices_indices, depth_image, min_depth, max_depth):
+    # 生成深度图像
+    # 遍历各面
+    temp_depth_a = np.zeros(depth_image.shape, np.uint8)
+    temp_depth_b = np.zeros(depth_image.shape, np.uint8)
+    for i in range(vertices_indices.shape[0] - 1, 0, -1):
+        # 获取当前三角面片顶点索引
+        index_va = vertices_indices[i][0] - 1
+        index_vb = vertices_indices[i][1] - 1
+        index_vc = vertices_indices[i][2] - 1
+        # 获取当前三角面片顶点坐标
+        va = vertices_coordinates[index_va]
+        vb = vertices_coordinates[index_vb]
+        vc = vertices_coordinates[index_vc]
+        # 计算三角面片平均深度
+        mean_depth = (va[2] + vb[2] + vc[2]) / 3
+        # 归一化深度为 0-255 的灰度
+        scale = int((mean_depth - min_depth) / (max_depth - min_depth) * 255)
+        grey_scale = [scale, scale, scale]
+        cv2.fillConvexPoly(temp_depth_a, np.array([[va[0], va[1]], [vb[0], vb[1]], [vc[0], vc[1]]], dtype=np.int32), grey_scale)
+    for i in range(vertices_indices.shape[0]):
+        # 获取当前三角面片顶点索引
+        index_va = vertices_indices[i][0] - 1
+        index_vb = vertices_indices[i][1] - 1
+        index_vc = vertices_indices[i][2] - 1
+        # 获取当前三角面片顶点坐标
+        va = vertices_coordinates[index_va]
+        vb = vertices_coordinates[index_vb]
+        vc = vertices_coordinates[index_vc]
+        # 计算三角面片平均深度
+        mean_depth = (va[2] + vb[2] + vc[2]) / 3
+        # 归一化深度为 0-255 的灰度
+        scale = int((mean_depth - min_depth) / (max_depth - min_depth) * 255)
+        grey_scale = [scale, scale, scale]
+        cv2.fillConvexPoly(temp_depth_b, np.array([[va[0], va[1]], [vb[0], vb[1]], [vc[0], vc[1]]], dtype=np.int32), grey_scale)
+    for row in range(depth_image.shape[0]):
+        for col in range(depth_image.shape[1]):
+            front = 0
+            grey_a = temp_depth_a[row][col][0]
+            grey_b = temp_depth_b[row][col][0]
+            if grey_a <= grey_b:
+                front = grey_b
+            else:
+                front = grey_a
+            depth_image[row][col] = front
+    cv2.imwrite("Depth.jpg", depth_image)
     return
 
 def drawTriangularMesh(vertices_indices, coordinates, image, color):
@@ -283,10 +331,75 @@ def getGlassesDistanceInformation(face_landmarks):
     information_file.close()
     return distances
 
+def cutPointCloud(old_obj, threshold):
+    # 对 z 轴设定阈值，以消除 z 坐标重复
+    # obj 文件包含 顶点 v, 纹理 vt, 三角面片 f（f中存放顶点与纹理的索引） 信息
+    # 通过 z 坐标过滤顶点 v，此时包含顶点 v 的三角面片也应当去除
+    # 若去除三角面片，则其含有的纹理信息也应当去除
+    # 首先遍历原始 obj 文件，获取顶点列表、纹理列表、三角面片索引信息列表
+    # 遍历顶点列表，获取要去除的顶点的索引
+    # 遍历三角面片索引信息列表，将含有要去除的索引的三角面片信息去除
+    # 记录所去除的面的纹理坐标，遍历纹理列表并去除
+    # 最终形成新的文件
+    cut_obj = open("cut_obj.obj", "w")
+    original_vertices = []
+    original_texture = []
+    original_faces = []
+    remove_vertices_indices = set()
+    remove_face_indices = set()
+    remove_texture_indices = set()
+    for line in old_obj.readlines():
+        content = line.split(" ")
+        # 顶点数据
+        if content[0] == "v":
+            original_vertices.append(line)
+        # 三角面片数据
+        if content[0] == "f":
+            original_faces.append(line)
+        # 纹理数据
+        if content[0] == "vt":
+            original_texture.append(line)
+    old_obj.close()
+    print("未裁剪文件 顶点:\t" + str(len(original_vertices)) +
+          "\t纹理:\t" + str(len(original_texture)) + "\t三角面:\t" + str(len(original_faces)))
+    for index, line in enumerate(original_vertices):
+        content = line.split(" ")
+        if float(content[3]) > threshold:
+            remove_vertices_indices.add(index)
+        else:
+            continue
+    for index, line in enumerate(original_faces):
+        content = line.split(" ")
+        for i in range(1, 4):
+            v = int(content[i].split("/")[0])
+            vt = int(content[i].split("/")[1])
+            if v - 1 in remove_vertices_indices:
+                remove_face_indices.add(index)
+                remove_texture_indices.add(vt - 1)
+    print("需去除点:\t" + str(len(remove_vertices_indices)) + "\t去除纹理:\t" +
+          str(len(remove_texture_indices)) + "\t去除网格:\t" + str(len(remove_face_indices)))
+    # 注意，f 信息中储存的索引是从 1 开始的
+    # 所以上述代码索引都是从 0 开始的
+    for index, line in enumerate(original_vertices):
+        if index not in remove_vertices_indices:
+            cut_obj.write(line)
+        else:
+            # 本行仅是行号补位作用，无意义
+            cut_obj.write("v 0.042966 -0.094774 0.43439\n")
+    for index, line in enumerate(original_texture):
+        if index not in remove_texture_indices:
+            cut_obj.write(line)
+        else:
+            cut_obj.write("vt 0.14193 0.20604\n")
+    for index, line in enumerate(original_faces):
+        if index not in remove_face_indices:
+            cut_obj.write(line)
+    cut_obj.close()
+
 
 opts, args = getopt.getopt(sys.argv[1:], "o:t:")
-obj_file_path = ""
-texture_file_path = ""
+obj_file_path = r"C:\Users\liyanxiang\Desktop\head\resUnWarpMesh.obj"
+texture_file_path = r"C:\Users\liyanxiang\Desktop\head\clonedBlur.png"
 for opt, value in opts:
     print("输入文件 : " + value)
     if opt == "-o":
@@ -296,32 +409,38 @@ for opt, value in opts:
         print("texture 文件路径为 : " + value)
         texture_file_path = value
 obj_file = open(obj_file_path, "r")
+threshold = 0.45
+cutPointCloud(obj_file, threshold)
+cut_obj = open("cut_obj.obj", "r")
 # original_coordinates 原始顶点坐标
 # vertices_indices 三角面片顶点索引
 # texture_indices 三角面片贴图索引
 # texture_coordinates 贴图坐标
-original_coordinates, vertices_indices, texture_indices, texture_coordinates = getOriginalData(obj_file)
-obj_file.close()
+original_coordinates, vertices_indices, texture_indices, texture_coordinates = getOriginalData(cut_obj)
+cut_obj.close()
 rounding_coordinates = getRoundingCoordinates(original_coordinates)
 x_max = np.max(rounding_coordinates[:, 0])
 x_min = np.min(rounding_coordinates[:, 0])
 y_max = np.max(rounding_coordinates[:, 1])
 y_min = np.min(rounding_coordinates[:, 1])
-print(x_max)
-print(x_min)
-print(y_max)
-print(y_min)
+z_max = np.max(rounding_coordinates[:, 2])
+z_min = np.min(rounding_coordinates[:, 2])
+print("X max: " + str(x_max) + "\t\tX min: " + str(x_min) + "\nY max: " + str(y_max) +
+      "\t\tY min: " + str(y_min) + "\nZ max: " + str(z_max) + "\t\tZ min: " + str(z_min))
 
 height = int(y_max - y_min)
 width = int(x_max - x_min)
+depth = int(z_max - z_min)
 print("图片高度为: " + str(height))
 print("图片宽度为: " + str(width))
 adjusted_coordinates = getAdjustedCoordinates(rounding_coordinates, x_min, y_min)
-blank_image = np.zeros((height, width, 3), np.uint8)
+color_image = np.zeros((height, width, 3), np.uint8)
+depth_image = np.zeros((height, width, 3), np.uint8)
 white = (255, 255, 255)
 green = (0, 255, 0)
 black = (0, 0, 0)
-blank_image[:, :] = white
+color_image[:, :] = white
+depth_image[:, :] = white
 
 faces_coordinates_file = open(r"C:\Users\liyanxiang\Desktop\Faces_Coordinates.txt", "w")
 '''
@@ -329,16 +448,18 @@ for coordinate in rounding_coordinates:
     blank_image[int(coordinate[1] - y_min - 1)][int(coordinate[0] - x_min - 1)] = black
 '''
 
-drawTriangularMesh(vertices_indices, adjusted_coordinates, blank_image, green)
-cv2.imwrite("Triangular.jpg", blank_image)
+drawTriangularMesh(vertices_indices, adjusted_coordinates, color_image, green)
+cv2.imwrite("Triangular.jpg", color_image)
 
-renderTexture(texture_coordinates, adjusted_coordinates, vertices_indices, texture_indices, texture_file_path, blank_image)
+renderTexture(texture_coordinates, adjusted_coordinates, vertices_indices, texture_indices, texture_file_path, color_image)
 
-drawTriangularMesh(vertices_indices, adjusted_coordinates, blank_image, green)
-cv2.imwrite("TextureCombineTriangle.jpg", blank_image)
+drawTriangularMesh(vertices_indices, adjusted_coordinates, color_image, green)
+cv2.imwrite("TextureCombineTriangle.jpg", color_image)
+
+renderDepth(adjusted_coordinates, vertices_indices, depth_image, z_max, z_min)
 
 face_landmarks = getFaceFeatures()
-drawLandmarks(face_landmarks, blank_image)
+drawLandmarks(face_landmarks, color_image)
 
 all_coordinates = landmarksDictToList(face_landmarks)
 landmarks_faces = getSurroundFaces(adjusted_coordinates, vertices_indices, all_coordinates)
@@ -346,8 +467,8 @@ landmarks_faces = getSurroundFaces(adjusted_coordinates, vertices_indices, all_c
 distances = getGlassesDistanceInformation(face_landmarks)
 
 faces_coordinates_file.close()
-cv2.imshow("Created", blank_image)
-cv2.imwrite("Created.jpg", blank_image)
+cv2.imshow("Created", color_image)
+cv2.imwrite("Created.jpg", color_image)
 print("image saved!")
 #cv2.waitKey(0)
 #cv2.destroyWindow()
