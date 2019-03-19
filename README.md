@@ -4,6 +4,8 @@
 
 3D Face Alignment
 
+V 0.02
+
 原材料：面部 obj 格式模型以及对应纹理贴图
 
 将三维面部模型降维平面并定位特征点，之后映射到三维，以初步提取面部参数。
@@ -22,6 +24,8 @@ facce_recognition (或自定义部特征点定位模型)
 ``` shell
 python FaceAlignment.py -o ./resources/yourObjModel.obj -t ./resources/yourTextureImage.png
 ```
+
+需注意代码中有变量threshold，将过滤z轴大于threshold值的顶点及三角网格，防止前后两个z值造成的干涉。根据情况自定，单位：米
 
 ### 效果
 
