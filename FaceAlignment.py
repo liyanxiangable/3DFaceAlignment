@@ -58,7 +58,7 @@ def getOriginalData(file):
            np.array(texture_coordinates, dtype=np.float32)
 
 def getRoundingCoordinates(coordinates):
-    rc_file = open(r"C:\Users\liyanxiang\Desktop\Rounding_Vertices.txt", "w")
+    rc_file = open("Rounding_Vertices.txt", "w")
     rounding_coordinates = np.zeros(coordinates.shape, dtype=np.int32)
     for i in range(coordinates.shape[0]):
         for j in range(coordinates.shape[1]):
@@ -69,7 +69,7 @@ def getRoundingCoordinates(coordinates):
     return rounding_coordinates
 
 def getAdjustedCoordinates(coordinates, x_min, y_min):
-    ac_file = open(r"C:\Users\liyanxiang\Desktop\Adjusted_Vertices.txt", "w")
+    ac_file = open("Adjusted_Vertices.txt", "w")
     adjusted_coordinates = np.zeros(coordinates.shape, dtype=np.int32)
     print("偏移量 x : " + str(x_min) + "\ty : " + str(y_min))
     for i in range(coordinates.shape[0]):
@@ -442,7 +442,7 @@ black = (0, 0, 0)
 color_image[:, :] = white
 depth_image[:, :] = white
 
-faces_coordinates_file = open(r"C:\Users\liyanxiang\Desktop\Faces_Coordinates.txt", "w")
+faces_coordinates_file = open("Faces_Coordinates.txt", "w")
 '''
 for coordinate in rounding_coordinates:
     blank_image[int(coordinate[1] - y_min - 1)][int(coordinate[0] - x_min - 1)] = black
